@@ -3,10 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 public class Monster : MonoBehaviour
 {
+
+     public int attackDamage = 10; // Lượng sát thương của quái vật
     public float moveSpeed = 2f; // Tốc độ di chuyển của quái vật
     public Transform groundDetection; // Điểm phát tia để kiểm tra tường hoặc mép
     private bool movingRight = true; // Đang di chuyển về bên phải hay không
+    public int maxHealth = 100;
 
+    private void Start()
+    {
+        MonsterHealth monsterHealth = GetComponent<MonsterHealth>();
+
+        if (monsterHealth != null)
+        {
+            monsterHealth.InitializeHealth(maxHealth); // Gọi hàm khởi tạo máu
+        }
+    }
+    
     void Update()
     {
         Move(); // Gọi hàm di chuyển quái vật
@@ -41,5 +54,19 @@ public class Monster : MonoBehaviour
         Vector3 localScale = transform.localScale;
         localScale.x *= -1; // Đảo trục X
         transform.localScale = localScale;
+    }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        // Kiểm tra nếu va chạm với Player
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            // Lấy script PlayerHealth từ đối tượng Player
+            PlayerHealth playerHealth = collision.gameObject.GetComponent<PlayerHealth>();
+
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(attackDamage); // Gọi hàm gây sát thương
+            }
+        }
     }
 }

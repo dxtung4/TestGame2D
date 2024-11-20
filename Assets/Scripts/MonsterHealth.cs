@@ -2,35 +2,57 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BossHealth : MonoBehaviour
+public class MonsterHealth : MonoBehaviour
 {
-
-	public int maxHealth = 200;
     private int currentHealth; 
-    public Health_Bar health_Bar;
+    private int maxHealth; // Không khai báo cố định
+    public Health_Bar health_Bar; // Tham chiếu đến thanh máu
 
-        void Start()
+    public void InitializeHealth(int maxHealthValue)
     {
-        // Khởi tạo máu hiện tại bằng máu tối đa
+        maxHealth = maxHealthValue; // Gán giá trị tối đa máu
         currentHealth = maxHealth;
-        health_Bar.SetMaxHealth(maxHealth);
+
+        if (health_Bar != null)
+        {
+            // Khởi tạo thanh máu cho Monster (không gradient)
+            health_Bar.InitializeHealthBar(maxHealth, false);
+        }
     }
-	public void TakeDamage(int damage)
-	{
 
-		currentHealth -= damage;
-        health_Bar.SetHealth(currentHealth);
+    public void TakeDamage(int damage)
+    {
+        currentHealth -= damage;
 
-		if (currentHealth <= 0)
-		{
-			Die();
-		}
-	}
+        if (health_Bar != null)
+        {
+            // Cập nhật giá trị máu trên thanh
+            health_Bar.SetHealth(currentHealth);
+        }
 
-	void Die()
-	{
+        // Kiểm tra xem đối tượng có triển khai IDamageable không
+        IDamageable damageable = GetComponent<IDamageable>();
+        if (damageable != null)
+        {
+            damageable.TakeDamage(damage);
+        }
 
-		Destroy(gameObject);
-	}
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
 
+    void Die()
+    {
+        IDamageable damageable = GetComponent<IDamageable>();
+        if (damageable != null)
+        {
+            damageable.Die();
+        }
+        else
+        {
+        Destroy(gameObject); // Hủy đối tượng Monster
+        }
+    }
 }

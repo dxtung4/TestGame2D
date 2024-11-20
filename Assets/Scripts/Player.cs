@@ -1,61 +1,63 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    // Biến tốc độ di chuyển
+    [Header("Movement")]
     public float moveSpeed = 1f;
-    // Biến lực nhảy
     public float jumpForce = 2f;
 
-    // Biến kiểm tra có ở trên mặt đất không
+    [Header("Ground Check")]
+    public LayerMask groundLayer;
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.1f;
     private bool isGrounded;
 
-    // Lấy thành phần Rigidbody2D của nhân vật
-    private Rigidbody2D rb;
+    [Header("Attack Settings")]
+    public int attackDamage = 10; // Sát thương khi tấn công
+    public Collider2D attackCollider; // Collider kiểm tra va chạm tấn công
+    public float attackDuration = 0.2f; // Thời gian hoạt động của Collider
 
-    // Gán LayerMask cho vật cản (mặt đất)
-    public LayerMask groundLayer;
-    // Đặt vị trí để kiểm tra mặt đất (ví dụ, dưới chân của nhân vật)
-    public Transform groundCheck;
-    // Khoảng cách để kiểm tra mặt đất
-    public float groundCheckRadius = 0.1f;
-    // Lấy Collider của nhân vật
-    private BoxCollider2D boxCollider;
+    private Rigidbody2D rb;
+    private Animator animator;
+    private bool isAttacking = false;
 
     private void Start()
     {
-        // Lấy Rigidbody2D và BoxCollider2D của nhân vật
         rb = GetComponent<Rigidbody2D>();
-        boxCollider = GetComponent<BoxCollider2D>();
+        animator = GetComponent<Animator>();
+
+        if (attackCollider == null)
+        {
+            Debug.LogError("Attack Collider is not assigned!");
+        }
+        else
+        {
+            attackCollider.enabled = false; // Tắt collider khi không tấn công
+        }
     }
 
     private void Update()
     {
-        // Gọi hàm di chuyển
-        Move();
-
-        // Kiểm tra nếu nhân vật đang đứng trên mặt đất
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
-        // Xử lý nhảy nếu nhấn phím Space và đang đứng trên mặt đất
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        // Chỉ di chuyển nếu không đang tấn công
+        if (!isAttacking)
         {
-            Jump();
+            Move();
+            JumpCheck();
         }
 
+        // Gọi tấn công khi nhấn J
+        if (Input.GetKeyDown(KeyCode.J) && !isAttacking)
+        {
+            StartCoroutine(Attack());
+        }
     }
 
     private void Move()
     {
-        // Lấy input di chuyển từ bàn phím theo trục X
         float moveX = Input.GetAxisRaw("Horizontal");
-
-        // Đặt vận tốc di chuyển trên trục X
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
 
-        // Đảo ngược hướng của nhân vật nếu di chuyển sang trái
         if (moveX > 0)
         {
             transform.localScale = new Vector3(1, 1, 1);
@@ -64,17 +66,57 @@ public class Player : MonoBehaviour
         {
             transform.localScale = new Vector3(-1, 1, 1);
         }
+
+        animator.SetFloat("Speed", Mathf.Abs(moveX));
+    }
+
+    private void JumpCheck()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            Jump();
+        }
+
+        animator.SetBool("isJumping", !isGrounded);
     }
 
     private void Jump()
     {
-        // Áp dụng lực nhảy cho nhân vật
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+    }
+
+    private IEnumerator Attack()
+    {
+        isAttacking = true; // Chặn di chuyển khi tấn công
+        animator.SetTrigger("isAttacking"); // Kích hoạt animation tấn công
+
+        attackCollider.enabled = true; // Bật collider để kiểm tra va chạm
+
+        // Đợi thời gian tấn công (theo thời gian duration của attack)
+        yield return new WaitForSeconds(attackDuration);
+        attackCollider.enabled = false; // Tắt collider sau khi animation kết thúc     
+        animator.ResetTrigger("isAttacking");
+        isAttacking = false; // Cho phép di chuyển lại
+    }
+
+
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (attackCollider.enabled && other.CompareTag("Monster"))
+        {
+            MonsterHealth monsterHealth = other.GetComponent<MonsterHealth>();
+            if (monsterHealth != null)
+            {
+                monsterHealth.TakeDamage(attackDamage);
+            }
+        }
     }
 
     private void OnDrawGizmos()
     {
-        // Vẽ bán kính kiểm tra mặt đất trong cửa sổ Scene của Unity
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
