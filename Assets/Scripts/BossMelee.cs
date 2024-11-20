@@ -78,7 +78,7 @@ public abstract class BossMelee : MonoBehaviour, IDamageable
         FlipTowardsPlayer();
     }
 
-    protected void MoveTowardsPlayer()
+    protected virtual void MoveTowardsPlayer()
     {
         // Di chuyển về phía Player
         Vector2 direction = (player.position - transform.position).normalized;
@@ -129,12 +129,12 @@ public abstract class BossMelee : MonoBehaviour, IDamageable
         if (player.position.x < transform.position.x && transform.localScale.x > 0)
         {
             // Quay mặt trái
-            transform.localScale = new Vector3(-1f, 1f, 1f);
+            transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
         }
         else if (player.position.x > transform.position.x && transform.localScale.x < 0)
         {
             // Quay mặt phải
-            transform.localScale = new Vector3(1f, 1f, 1f);
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
         }
     }
 

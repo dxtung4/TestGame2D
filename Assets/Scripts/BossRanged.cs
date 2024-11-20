@@ -173,7 +173,7 @@ public class BossRanged : MonoBehaviour, IDamageable
         // Kết thúc tấn công, quay lại trạng thái ban đầu
         animator.SetBool("isAttacking", false);
     }
-
+    
     private void Flip()
     {
         // Kiểm tra xem player ở bên trái hay bên phải của boss và quay mặt boss cho phù hợp
